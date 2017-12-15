@@ -1,0 +1,126 @@
+################################################################################
+# Makefile
+################################################################################
+
+# Program Paths
+#AVRBIN	= d:/Programme/Arduino/hardware/tools/avr/bin
+#AVRETC = d:/Programme/Arduino/hardware/tools/avr/etc
+#RM	= del
+AVRBIN  = /usr/bin
+AVRETC  = /etc
+RM      = /bin/rm -f
+
+AVRDUDE	= $(AVRBIN)/avrdude
+CXX	= $(AVRBIN)/avr-g++
+AS	= $(AVRBIN)/avr-as
+LD	= $(AVRBIN)/avr-ld
+OBJCOPY	= $(AVRBIN)/avr-objcopy
+OBJDUMP	= $(AVRBIN)/avr-objdump
+BootSetup = ruby ../../BootSetup/BootSetup.rb
+
+# Build Target
+MCU	?= atmega328p
+PROG	?= arduino
+
+# Source Files
+Main	= lamp
+SrcAsm	= boot.$(MCU) $(Main)
+IncAsm	= ports.$(MCU) # settings
+SrcCpp	= loop
+IncCpp	=
+Eeprom	= # -U eeprom:w:$<:r
+Fuses	= -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m  # -U lfuse:w:0xff:m -U hfuse:w:0xdf:m -U efuse:w:0xff:m
+
+# Programmer Settings
+ifeq ($(PROG), arduino)
+BAUD	?= 115200
+#PORT	?= COM5
+PORT	?= /dev/UnoClone
+ERASE	?= -D
+else ifeq ($(PROG), stk500v1)
+BAUD	?= 19200
+PORT    ?= /dev/AVRprog
+PORT	?= COM4
+ERASE	?=
+else
+$(error unknown PROG $(PROG))
+endif
+
+################################################################################
+# nothing to be configured below
+################################################################################
+
+ifeq ($(MCU),attiny24)
+DEFSYM  = 24
+else ifeq ($(MCU),attiny44)
+DEFSYM  = 44
+else ifeq ($(MCU),attiny25)
+DEFSYM  = 25
+else ifeq ($(MCU),attiny45)
+DEFSYM  = 45
+else ifeq ($(MCU),attiny85)
+DEFSYM  = 85
+else ifeq ($(MCU),atmega8)
+DEFSYM  = 8
+else ifeq ($(MCU),atmega328p)
+DEFSYM  = 328
+else
+$(error unknown MCU $(MCU))
+endif
+
+################################################################################
+
+ObjAsm  = $(addsuffix .$(MCU).o,$(SrcAsm))
+ObjCpp	= $(addsuffix .$(MCU).o,$(SrcCpp))
+
+.PHONY:	ALL
+
+ALL:	$(Main).$(MCU).hex
+
+boot.$(MCU).asm ports.$(MCU).inc: Config.$(MCU)
+	$(BootSetup) -c Config.$(MCU)
+
+%.$(MCU).o %.o: %.asm $(addsuffix .inc, $(IncAsm))
+	$(AS) -g -mmcu=$(MCU) -defsym __MCU__=$(DEFSYM) -o $@ $<
+
+%.$(MCU).o: %.cpp $(addsuffix .h, $(IncCpp))
+	$(CXX) -DRAMSIZE=$(RAMSIZE) -O2 -Wall -std=c++11 -c -mmcu=$(MCU) -o $@ $<
+
+$(Main).$(MCU).elf: $(ObjAsm) $(ObjCpp)
+	$(LD) -o $@ $(ObjAsm) $(ObjCpp)
+
+%.hex: %.elf
+	$(OBJCOPY) -O ihex -R .eeporm $< $@
+
+################################################################################
+# PHONY targets
+
+AVRDUDEParam = -C $(AVRETC)/avrdude.conf -p $(MCU) -c $(PROG) -P $(PORT) -b $(BAUD)
+
+.PHONY:	Upload Clean Eeprom Fuses Dism Help
+
+Upload: $(Main).$(MCU).hex
+	$(AVRDUDE) $(AVRDUDEParam) $(ERASE) -U flash:w:$<:i
+
+Clean:
+	$(RM) boot.*.asm ports.*.inc *.o *.elf *.hex *.dism *~
+
+ifneq ($(Eeprom),)
+Eeprom:
+	$(AVRDUDE) $(AVRDUDEParam) $(Eeprom)
+endif
+
+ifneq ($(Fuses),)
+Fuses:
+	$(AVRDUDE) $(AVRDUDEParam) $(Fuses)
+endif
+
+Dism:	$(Main).$(MCU).elf
+	$(OBJDUMP) -D -m avr5 $< > $(Main).$(MCU).dism
+
+Help:
+	@echo 'make [MCU=atmega328p|attiny45|attiny85] [PROG=stk500v1|arduino] [Upload] [Clean] [Eeprom] [Fuses] [Help]'
+
+################################################################################
+# EOF
+################################################################################
