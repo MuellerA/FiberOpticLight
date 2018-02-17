@@ -8,6 +8,8 @@
 	.include "ports.atmega328p.inc"
         .elseif __MCU__ == 8
         .include "ports.atmega8.inc"
+        .elseif __MCU__ == 45
+        .include "ports.attiny45.inc"
         .else
         .error
 	.endif
@@ -122,7 +124,7 @@ B0:
 	nops 4
 	.elseif MCUclock == 20000000 ; 20MHz:5
 	nops 5
-        .elseif MCUclock == 8000000 ; 8MHz:2
+        .elseif MCUclock == 8000000 ; 8MHz:1
         nops 1
         .else
 	.endif
@@ -146,7 +148,7 @@ B1:
 	nops 9
 	.elseif MCUclock == 20000000 ; 20MHz:12
 	nops 12
-        .elseif MCUclock == 8000000 ; 8MHz:1
+        .elseif MCUclock == 8000000 ; 8MHz:4
         nops 4
         .else
         .error
@@ -157,7 +159,7 @@ B1:
 	nops 2
 	.elseif MCUclock == 20000000 ; 20MHZ:5
 	nops 5
-        .elseif MCUclock == 8000000 ; 8MHz:0
+        .elseif MCUclock == 8000000 ; 8MHz:1
         nops 1
         .else
         .error
