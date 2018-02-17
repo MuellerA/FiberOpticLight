@@ -2,142 +2,188 @@
 // fiber optic lamp
 ////////////////////////////////////////////////////////////////////////////////
 
+Radius =  3   ; // [2:0.1:6]
+Width  =  1.6 ; // [1:0.1:3.5]
+Height = 45   ; // [40:2:90]
 
-Radius3      = 2.5 ; // [2:0.1:10]
-Width        = 2   ; // [1:0.1:5]
-Delta        = 0.8 ; // [0:0.1:1]
-WidthWS2812  = 5   ; // [4:0.1:6]
-LengthWS2812 = 8   ; // [6:0.1:9]
-mode         = "foot" ; // ["main", "top", "bottom", "ws2812", "foot"]
+WidthLed  = 5   ; // [4:0.1:6]
+LengthLed = 8   ; // [6:0.1:9]
+
+FitTolerance = 0.9 ; // [0.4:0.1:1.5]
+
+parts = "all" ;    // [all,center,bottom,top,led]
+
 
 /* [Hidden] */
 
-$fn = 60 ;
+$fa = 1 ;
+$fs = 0.3 ;
 
-Area3 = PI * Radius3 * Radius3 ;
-Area1 = Area3 * 3 ;
-Radius1 = sqrt(Area1/PI) ;
-
-if (false)
+module FiberOpticLamp(Radius3, Width)
 {
-  echo(Radius1=Radius1) ;
-  echo(Area1=Area1) ;
-  echo(Radius3=Radius3) ;
-  echo(Area3=Area3) ;
-}
+  Area3 = PI * Radius3*Radius3 ;
+  Area1 = Area3 * 3 ;
+  Radius1 = sqrt(Area1/PI) ;
 
-module Hole(R1, R3, W)
-{
-  union()
+  H1 = Height / 3 ;
+  H3 = Height ;
+  H2 = (H1+H3)/2 ;
+  X1 = 4 ;
+  
+  function fX(z) = (z - H3) * X1 * Radius3 / (H1 - H3) ;
+  function fP(z) = [fX(z), 0, z] ;
+
+  alpha = atan(X1*Radius3 / (H3-H1)) ;
+  function fXR(z, r) = (z - (H3+r/sin(alpha))) * X1 * Radius3 / (H1 - H3) ;
+  function fPR(z, r) = [fXR(z,r), 0, z] ;
+  
+  P0 = [0,0,0] ;
+  P1 = fP(H1) ;
+  P2 = fP(H2) ;
+  P3 = fP(H3) ;
+  
+  module cylinderP(p, pr, q, qr)
   {
-    translate([0,0,1.8*R1])
-      color("blue") cylinder(r=R1, h=2*R1) ;
-    
-    translate([0,0,R1])
-      color("yellow") cylinder(r1=1.5*R1, r2=R1, h=R1) ;
-    
-    for (i=[0:2])
-      rotate([0,0,120*i])
-        translate([-2.5*R3, 0, 0])
-        rotate([0,30,0])
-        translate([0,0,-3.5*R3])
-        color("green") cylinder(r=R3, h=5.5*R3+W) ;
+    d = q - p ;
+    h = norm(d) ;
+
+    translate(p)
+    rotate([0, 0, atan2(d.y, d.x)])
+    rotate([0, atan2(norm([d.x,d.y]), d.z), 0])
+    cylinder(h = h, r1 = pr, r2 = qr) ;
   }
-}
 
-module Solid(R1, R3, W)
-{
-  union()
+
+  module Center()
   {
-    color("gray")
-      translate([0,0,-3.3*R1])
-      cylinder(r=R3, h=3.5*R1) ;
-
-    minkowski()
+    module Hole()
     {
-      sphere(r=W) ;
-      hull()
+      Px = fP(0) ;
+      
+      union()
       {
-        color("pink")
-          cylinder(r=1.5*(R1), h=2*R3) ;
-    
-        color("white")
-          translate([0,0,R1+0.1])
-          cylinder(r1=1.5*(R1), r2=(R1), h=R1*1.6) ;
+        for (i=[0:2])
+        rotate([0,0,120*i])
+        color(c=[0, 1, 0])
+        cylinderP(Px, Radius3, P3, Radius3) ;
+
+        cylinderP([0,0,H2], Radius3*10, [0,0,2*H3], Radius3*10) ;
       }
     }
-    for (i=[0:2])
-      rotate([0,0,120*i])
-        translate([-2.5*R3, 0, 0])
-        rotate([0,30,0])
-        translate([0,0,-2.8*R3])
-        color("green") cylinder(r=R3+W, h=4.5*R3+W) ;
-  }
-}
 
-
-module Body(R1, R3, W)
-{
-  difference()
-  {
-    Solid(R1, R3, W) ;
-    Hole(R1,R3,W) ;
-  }
-}
-
-module Part(R1, R3, W, m)
-{
-  difference()
-  {
-    Body(R1, R3, W) ;
-
-    if (mode == "top")
-      translate([0,0,-4*R1])
-        cylinder(r=3*R1+W, h=5*R1) ;
-
-    if (mode == "bottom")
-      translate([0,0,R1])
-        cylinder(r=3*R1+W, h=R1*3) ;
-  }
-}
-
-module Foot(R1, R3, W, delta)
-{
-  difference()
-  {
-    union()
+    module Coat()
     {
-      color("blue")
-        cylinder(r=5*R1, h=W) ;
-      color("green")
-        translate([0,0,W/2])
-        cylinder(r=R3+W+delta/2, h=4*R3) ;
+      union()
+      {
+        for (i=[0:2])
+        rotate([0,0,120*i])
+        color(c=[1,0,0])
+        cylinderP(P1, Radius3+Width, P3, Radius3+Width) ; // fiber optic
+
+        color(c=[0.8, 0.2, 0.2])
+        cylinderP([0,0,H3], fX(H2), [0,0,(H1+H2)/2], fX(H2)) ; // enhancment
+        
+        color(c=[1, 0.4, 0.4])
+        cylinderP(P0+[0,0,Width], Radius3, [0,0,H2-0.01], Radius3) ; // stand
+      }
     }
-    color("pink")
-      translate([0,0,R3])
-      cylinder(r=R3+delta/2, h=5*R3) ;
-  }
-}
 
-module Ws2812(R1, R3, W, delta, Wws, Lws)
-{
-  difference()
+    difference()
+    {
+      Coat() ;
+      Hole() ;
+    }
+  }
+  
+  module BoxBottom()
   {
-    color("green")
-      cylinder(r=R3+2*W+delta/2, h=3*R3) ;
+    R = max(fXR(H1, Radius3+3*Width), Radius3 + 32) ;
 
-    color("red")
-      translate([0,0,R3])
-      cube([Wws+delta, Lws+delta, 3*R3], center=true) ;
+    // base plate
+    cylinderP([0,0,0], R+Width, [0,0,Width], R+Width) ;
+    difference()
+    {
+      cylinderP([0,0,0], R-FitTolerance/2, [0,0,2*Width], R-FitTolerance/2) ;
+      cylinderP([0,0,0], R-FitTolerance/2-Width, [0,0,2*Width+0.01], R-FitTolerance/2-Width) ;            
+    }
 
-    translate([0,0,1.8*R3])
-      cylinder(r=R3+W+delta/2, h=2*R3) ;
+    // socket
+    difference()
+    {
+      cylinder(h=H1*0.8, r=Radius3+Width+FitTolerance/2) ;
+      translate([0,0,Width-0.01]) cylinder(h=H1+0.02, r=Radius3+FitTolerance/2) ;
+    }
+    
+    translate([R-8, -9, Width]) cube([8,18,Width]) ; // pcb base
+    cylinderP([R-3,  7, Width], 1.6, [R-3,  7, 2*Width+2], 1.6) ; // pcb hole
+    cylinderP([R-3, -7, Width], 1.6, [R-3, -7, 2*Width+2], 1.6) ; // pcb hole
   }
+
+  module BoxTop()
+  {
+    R = max(fXR(H1, Radius3+3*Width), Radius3 + 32) ;
+    
+    color(c=[0.5,0.5,1, 0.5])
+    difference()
+    {
+      union()
+      {
+        cylinderP([0,0,Width], R+Width, [0,0,H1], R+Width) ;
+        cylinderP([0,0,H1], R+Width, P3, fXR(H3, Radius3+3*Width)) ;
+      }
+      union()
+      {
+        zMid = (H2 + H3) / 2 ;
+        zMidLo = zMid - 0.01 ;
+        zMidHi = zMid + 0.01 ;
+        rMidLo = fXR(zMidLo, Radius3+2*Width) ;
+        rMidHi = fXR(zMidHi, Radius3+2*Width) ;
+        zTopHi = Height+0.01 ;
+        rTopHi = fXR(zTopHi, Radius3+2*Width) ;
+        
+        cylinderP([0,0,0], R, [0,0,H1+0.01], R) ;
+        cylinderP([0, 0, H1], R, [0,0,zMidHi], rMidHi) ;
+        cylinderP([0, 0, zMidLo], rMidLo, [0,0,zTopHi], rTopHi) ;
+        color("yellow") translate([R,0,Width+2.5]) cube([10,18+FitTolerance,2*Width+5.0], center=true) ;
+      }
+    }
+  }
+
+  module Led()
+  {
+    difference()
+    {
+      color("green")
+        cylinder(r = Radius3 + 2*Width + FitTolerance/2, h = 5 * Width) ;
+
+      color("red")
+        cube([WidthLed + FitTolerance, LengthLed + FitTolerance, 7 * Width], center=true) ;
+
+      translate([0,0,3*Width])
+        cylinder(r = Radius3 + Width + FitTolerance/2, h = 4 * Width) ;
+
+      translate([0,0,Width])
+        cylinder(r = Radius3 + FitTolerance/2, h = 4 * Width) ;
+    }
+  }
+  
+  if ((parts == "all") || (parts == "center"))
+    Center() ;
+  
+  if ((parts == "all") || (parts == "bottom"))
+    BoxBottom() ;
+
+  if ((parts == "all") || (parts == "top"))
+    BoxTop() ;
+    
+  if (parts == "led")
+    Led() ;  
 }
 
-if      (mode == "main")    Body(Radius1, Radius3, Width) ;
-else if (mode == "top")     Part(Radius1, Radius3, Width, mode) ;
-else if (mode == "middle")  Part(Radius1, Radius3, Width, mode) ;
-else if (mode == "bottom")  Part(Radius1, Radius3, Width, mode) ;
-else if (mode == "ws2812")  Ws2812(Radius1, Radius3, Width, Delta, WidthWS2812, LengthWS2812) ;
-else if (mode == "foot")    Foot(Radius1, Radius3, Width, Delta) ;
+FiberOpticLamp(Radius, Width) ;
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// EOF
+////////////////////////////////////////////////////////////////////////////////
