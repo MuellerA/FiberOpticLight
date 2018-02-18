@@ -5,8 +5,8 @@
     {
       #:type => :ATmega8,
       :type => :ATtiny45,
-      :clockType => :intern,
-      :clock => 8000000,
+      :clockType => :pll,
+      :clock => 16000000,
       :clockPrescale => 1, # 1, 2, 4, 8, 16, 32, 64, 128
 
       :pullupDisable => false,

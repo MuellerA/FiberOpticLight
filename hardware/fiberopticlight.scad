@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// fiber optic lamp
+// fiber optic light
 ////////////////////////////////////////////////////////////////////////////////
 
 Radius =  3   ; // [2:0.1:6]
@@ -19,7 +19,7 @@ parts = "all" ;    // [all,center,bottom,top,led]
 $fa = 1 ;
 $fs = 0.3 ;
 
-module FiberOpticLamp(Radius3, Width)
+module FiberOpticLight(Radius3, Width)
 {
   Area3 = PI * Radius3*Radius3 ;
   Area1 = Area3 * 3 ;
@@ -180,7 +180,7 @@ module FiberOpticLamp(Radius3, Width)
     Led() ;  
 }
 
-FiberOpticLamp(Radius, Width) ;
+FiberOpticLight(Radius, Width) ;
 
 
 

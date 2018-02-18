@@ -15,6 +15,7 @@ Linux.AVRETC          = /etc
 Linux.RM              = /bin/rm -f
 Linux.arduino.PORT    = /dev/UnoClone
 Linux.stk500v1.PORT   = /dev/AVRprog
+Linux.micronucleus    = ~/Arduino/micronucleus/commandline/micronucleus
 
 # Avrdude Parameters
 arduino.BAUD          = 115200
@@ -34,14 +35,14 @@ PROG	?= stk500v1
 # Source Files
 ################################################################################
 
-Main	= lamp
+Main	= light
 SrcAsm	= boot.$(MCU) $(Main)
 IncAsm	= ports.$(MCU) # settings
 SrcCpp	= loop
 IncCpp	=
 Eeprom	= # -U eeprom:w:$<:r
 Fuses.atmega8  = -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m
-Fuses.attiny45 = -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
+Fuses.attiny45 = -U lfuse:w:0xe1:m -U hfuse:w:0xdf:m
 
 ################################################################################
 # nothing to be configured below
@@ -108,6 +109,9 @@ AVRDUDEParam = -C $(AVRETC)/avrdude.conf -p $(MCU) -c $(PROG) -P $(PORT) -b $(BA
 
 Upload: $(Main).$(MCU).hex
 	$(AVRDUDE) $(AVRDUDEParam) $(ERASE) -U flash:w:$<:i
+
+UploadMN: $(Main).$(MCU).hex
+	$(Linux.micronucleus) --no-ansi $(Main).$(MCU).hex
 
 Clean:
 	$(RM) boot.*.asm ports.*.inc *.o *.elf *.hex *.dism *~
