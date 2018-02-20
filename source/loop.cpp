@@ -50,12 +50,12 @@ void loop()
         }
         break ;
 
-      case 254:
+      case 255:
         {
           led._delay = Rnd() ;
 
           unsigned short sum = 0 ;
-          while (sum < 384)
+          while (sum < 0x200)
           {
             led._r = Rnd() ;
             led._g = Rnd() ;

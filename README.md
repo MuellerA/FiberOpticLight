@@ -50,7 +50,7 @@ You can use the provided hex files or compile them yourself.<br/>Check the setti
 </ul>
 
 <h2>Generate the STL files</h2>
-You can download the STL files from <a href="https://www.thingiverse.com/thing:2798190">Thingiverse</a> or build them yourself. You can change the dimensios of the light by adjusting the values at the top of the scad file.<br>
+You can download the STL files from <a href="https://www.thingiverse.com/thing:2798190">Thingiverse</a> or build them yourself. You can change the dimensions of the light by adjusting the values at the top of the scad file.<br>
 Check the settings in the hardware/Makefile
 <pre>
   cd hardware
@@ -83,7 +83,7 @@ Click on the images for bigger versions.
       <ul>
         <li>Insert the fibers into the Center part</li>
         <li>Add the ATtiny45 to the development board</li>
-        <li>Solder the WS2812Bs together and attach them to the development board or Arduino (see above for pin number)</li>
+        <li>Solder the WS2812Bs together and attach them to the development board or Arduino (see above for pin numbers)</li>
         <li>Add an USB power cable for a first check</li>
       </ul>
     </p>

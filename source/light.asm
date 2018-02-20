@@ -186,24 +186,17 @@ Nop:	nop
         .global Delay
 Delay:
 
-	push r16
-	push r17
-	push r18
-
-	ldi r18, 0x01
-	ldi r17, 0
-	ldi r16, 0
+	ldi 25, 0x02
+	ldi 24, 0
+	ldi 23, 0
 DelayLoop:
-	dec r16
+	dec 23
 	brne DelayLoop
-	dec r17
+	dec 24
 	brne DelayLoop
-	dec r18
+	dec 25
 	brne DelayLoop
 
-	pop r18
-	pop r17
-	pop r16
 	ret
 
 ;;; ========================================================================
